@@ -5,10 +5,17 @@ import (
 )
 
 func TestSpeedtestNetOK() {
-	speedtst.RunSpeedTest("ala")
-
+	speedtst.RunSpeedTest("SpeedtestNetProvider", nil)
 }
 
 func TestSpeedtestNetNOK() {
+
+}
+
+func TestFastcomOK() {
+	speedtst.RunSpeedTest("fastcom", nil)
+}
+
+func TestFastComNOK() {
 
 }
