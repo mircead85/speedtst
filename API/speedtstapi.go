@@ -2,8 +2,8 @@ package speedtstapi //We define here common types and interfaces for all Speed T
 
 //What we are actually interested in
 type SpeedTestResults struct {
-	uploadspeedMbps   float32 //in MBps
-	downloadspeedMbps float32 //in MBps
+	UploadspeedMbps   float32 //in MBps
+	DownloadspeedMbps float32 //in MBps
 }
 
 //Info about how an ongoing or completed test (atttempt) went

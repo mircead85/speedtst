@@ -15,7 +15,7 @@ func getProvider(providerName string) speedtstapi.SpeedTestProvider{
 		return new(speedtestnetprovider.SpeedNetProvider)
 	}
 	
-	if(providerName == "speedtestnet") {
+	if(providerName == "fastcom") {
 		return new(fastcomprovider.FastComProvider);
 	}
 
@@ -41,7 +41,9 @@ func RunSpeedTest(speedTestProviderName string, providerConfig *speedtstapi.Spee
 		return result
 	}
 
-	provider.DoSpeedTest(result)
+	result.FriendlyErrorMessage = "Ala"
 
+	provider.DoSpeedTest(result)
+	
 	return result
 }

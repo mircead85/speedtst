@@ -4,21 +4,47 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"sync"
 	"strconv"
+	"strings"
+	"time"
 
 	speedtstapi "exemple.com/speedtstMirceaD/API"
 )
 
 //URL used to access the FAST.com API. Would normally be relegated to an app config file (in C# I mean).
-const mcFmtString = "http%s://api.fast.com/netflix/speedtest?https=%s&token=%s&urlCount=%d"
+const mcFmtString = "http%s://api.fast.com/netflix/speedtest/v2?https=%s&token=%s&urlCount=%d"
 const mcDefaultHttps = false
-const mcDefaultToken = "242343242"
+const mcDefaultToken = "YXNkZmFzZGxmbnNkYWZoYXNkZmhrYWxm"
 const mcDefaultUrlCount = 3
+
+type FastcomResponse struct
+{
+	client FastcomClient 
+	targets []FastcomTarget
+}
+type FastcomClient struct
+{
+	ip string
+	asn string
+	isp string
+	location FastcomLocation
+}
+
+type FastcomLocation struct
+{
+	city string
+	country string
+}
+
+type FastcomTarget struct
+{
+ 	name string
+	url string
+	location FastcomLocation
+}
 
 type FastComProvider struct {
 	fmtFullUrl  string
-	testRunning sync.Mutex
 }
 
 func (provider *FastComProvider) DefaultConfig() *speedtstapi.SpeedTestProviderConfig {
@@ -46,13 +72,13 @@ func (provider *FastComProvider) Init(config *speedtstapi.SpeedTestProviderConfi
 		bHttps = bHttpsConfig
 	}
 
-	tokenConfig := effectiveConfig.Fields["oken"]
+	tokenConfig := effectiveConfig.Fields["Token"]
 
 	if tokenConfig != "" {
 		token = tokenConfig
 	}
 
-	sUrlCountConfig := effectiveConfig.Fields["Urlount"]
+	sUrlCountConfig := effectiveConfig.Fields["UrlCount"]
 	if sUrlCountConfig != "" {
 		urlCountConfig, bOK := strconv.ParseUint(sUrlCountConfig, 10, 0)
 		if bOK != nil || urlCountConfig > 10 {
@@ -74,34 +100,90 @@ func (provider *FastComProvider) Init(config *speedtstapi.SpeedTestProviderConfi
 }
 
 func (provider *FastComProvider) DoSpeedTest(attemptResult *speedtstapi.SpeedTestAttemptResult) {
-	(*provider).testRunning.Lock()
+	attemptResult.WasSuccesfull = false
+	attemptResult.HadRemoteOrNetworkError = true
 
 	resp, err := http.Get(provider.fmtFullUrl)
 
-	attemptResult = new(speedtstapi.SpeedTestAttemptResult)
-
 	if err != nil {
-		attemptResult.WasSuccesfull = false
-		attemptResult.HadRemoteOrNetworkError = true
+		attemptResult.FriendlyErrorMessage = "Base URL invalid for Fast.com (maybe they changed it, or the token expired)?.."
 		return
 	}
 
 	respBody, err2 := ioutil.ReadAll(resp.Body)
+	resp.Body.Close();
+
 	if err2 != nil {
 		//Better to introduce logging mechanism in the future
-		attemptResult.WasSuccesfull = false
-		attemptResult.HadRemoteOrNetworkError = true
+		attemptResult.FriendlyErrorMessage = "Error reading response from Fast.com. Maybe network error."
 		return
 	}
 
-	attemptResult.FriendlyErrorMessage = string(respBody)
+	/* //What I tried with JSON parsing and didn't manage to get it working in alloted time.
+	var fastcomResponseObj FastcomResponse;
 
-	fmt.Printf(attemptResult.FriendlyErrorMessage)
+	attemptResult.FriendlyErrorMessage=string(respBody);
 
-	//var speeds []string;
+	err3 := json.Unmarshal(respBody, &fastcomResponseObj)
 
-	//err := json.Unmarshal(respBody, &speeds)
+	if err3 != nil {
+		attemptResult.FriendlyErrorMessage = "Error parsing response body as json - maybe Fast.com changed format."
+		return
+	}
+		
+	targets := fastcomResponseObj.targets;
 
-	(*provider).testRunning.Unlock()
-	//Could generate OS resources leackage maybe if error (exception happens in the code above?). Too new to know equivalent pattern to using() from C#.
+	attemptResult.FriendlyErrorMessage = "afterJsoning" + fmt.Sprintf("%s", targets[0].url);
+	/**/
+
+	var totalDwlTimeInMbs float64;
+	totalSlices := 0;
+	var averageDwlTimeInMbps float64;
+	
+	respBodyStrSlices := strings.Split(fmt.Sprintf("%s",respBody), "\"url\":\"");
+	if len(respBodyStrSlices) < 2 {
+		attemptResult.FriendlyErrorMessage = "The number of response target URLs was less than 1. It seams that Fast.com changed format of response, or maybe an invalid token was used."
+		return
+	}
+	
+	for _, targetUrlSlice := range respBodyStrSlices {
+		indexOfNextQuote := strings.Index(targetUrlSlice, "\"");
+		if(indexOfNextQuote < 0) {
+			break;
+		}
+		targetUrl := targetUrlSlice[0:indexOfNextQuote];
+		startTimeInNs := time.Now();
+		respTarget, err4 := http.Get(targetUrl);
+		if(err4 != nil) {
+			continue;
+		}
+
+		respBodyTarget, err5 := ioutil.ReadAll(respTarget.Body)
+		respTarget.Body.Close();
+		endTimeInNs := time.Now();
+
+		if err5 != nil {
+			continue;
+		}
+
+		bodyLenInBytes := len(respBodyTarget);
+
+		totalSlices++;
+		sliceDwlTime := float64(endTimeInNs.Sub(startTimeInNs).Seconds());
+		curSpeed := (float64(bodyLenInBytes*8) / (1024.0*1024.0)  ) / sliceDwlTime
+		totalDwlTimeInMbs+=curSpeed;
+	}
+
+	if(totalSlices == 0) {
+		attemptResult.FriendlyErrorMessage = "No target URL succeded. Maybe Fast.com changed the policies or the methods in getting results.";
+		return;
+	}
+
+	averageDwlTimeInMbps = totalDwlTimeInMbs / float64(totalSlices);
+
+	attemptResult.WasSuccesfull = true;
+	attemptResult.HadRemoteOrNetworkError = false;
+	attemptResult.Speeds = new(speedtstapi.SpeedTestResults);
+	attemptResult.Speeds.DownloadspeedMbps = float32(averageDwlTimeInMbps);
+	attemptResult.Speeds.UploadspeedMbps = -1.0; //Fast.com does not support Upload speed test.
 }
