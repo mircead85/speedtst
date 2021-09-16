@@ -1,0 +1,10 @@
+
+   Speedtest by Ookla
+
+     Server: Prime Telecom - Bucharest (id = 9709)
+        ISP: Digi Romania
+    Latency:     3.55 ms   (0.17 ms jitter)
+   Download:   927.21 Mbps (data used: 932.6 MB)                               
+     Upload:   938.64 Mbps (data used: 702.3 MB)                               
+Packet Loss:     0.0%
+ Result URL: https://www.speedtest.net/result/c/47f73a71-4d5b-48f2-a88e-324d6d8705c9
