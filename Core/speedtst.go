@@ -41,8 +41,6 @@ func RunSpeedTest(speedTestProviderName string, providerConfig *speedtstapi.Spee
 		return result
 	}
 
-	result.FriendlyErrorMessage = "Ala"
-
 	provider.DoSpeedTest(result)
 	
 	return result

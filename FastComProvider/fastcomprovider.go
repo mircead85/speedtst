@@ -80,7 +80,7 @@ func (provider *FastComProvider) Init(config *speedtstapi.SpeedTestProviderConfi
 
 	sUrlCountConfig := effectiveConfig.Fields["UrlCount"]
 	if sUrlCountConfig != "" {
-		urlCountConfig, bOK := strconv.ParseUint(sUrlCountConfig, 10, 0)
+		urlCountConfig, bOK := strconv.ParseUint(sUrlCountConfig, 10, 32)
 		if bOK != nil || urlCountConfig > 10 {
 			return "ERROR: Invalid UrlCount value. Unsigned int <= 10 string expected." //Should be extracted to Error messages globably (Global MapEnum)
 		}
