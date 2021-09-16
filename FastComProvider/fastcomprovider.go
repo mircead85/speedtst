@@ -44,7 +44,7 @@ type FastcomTarget struct
 }
 
 type FastComProvider struct {
-	fmtFullUrl  string
+	fmtFullUrl  string //Inited based on Config fields "UseHttps", "Token" and "UrlCount" which have good default values.
 }
 
 func (provider *FastComProvider) DefaultConfig() *speedtstapi.SpeedTestProviderConfig {

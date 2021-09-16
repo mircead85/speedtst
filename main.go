@@ -4,6 +4,7 @@ import (
 	"fmt"
 	
 	speedtst "exemple.com/speedtstMirceaD/Core"
+	speedtstapi "exemple.com/speedtstMirceaD/API"
 )
 
 func main() {
@@ -14,7 +15,10 @@ func main() {
 		fmt.Printf("Fast.com download speed (average) in Mbps: %.2f\n",result.Speeds.DownloadspeedMbps)
 	}
 
-	result = speedtst.RunSpeedTest("speedtestnet", nil);
+	speedtestnetConfig := new(speedtstapi.SpeedTestProviderConfig);
+	speedtestnetConfig.Fields = make(map[string]string);
+	speedtestnetConfig.Fields["CLICommand"]="./External/speedtest.exe";
+	result = speedtst.RunSpeedTest("speedtestnet", speedtestnetConfig);
 	if(result.WasSuccesfull==false) {
 		fmt.Printf("Speedtest.net CLI attempt failed with message: %s\n", result.FriendlyErrorMessage)
 	} else {

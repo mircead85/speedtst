@@ -88,6 +88,17 @@ func TestFastComNOKInvalidToken(t *testing.T) {
 	}
 	if(result.HadLocalError == true || result.HadRemoteOrNetworkError == false || 
 		result.FriendlyErrorMessage != "The number of response target URLs was less than 1. It seams that Fast.com changed format of response, or maybe an invalid token was used.") {
-		t.Errorf("Speed failed but for the wrong reasons: %s", result.FriendlyErrorMessage);
+		t.Errorf("Speed test failed but for the wrong reasons: %s", result.FriendlyErrorMessage);
+	}
+}
+
+func TestFailNoSuchProvider(t *testing.T) {
+	result:= speedtst.RunSpeedTest("SpeedyGonzalez", nil);
+	if(result.WasSuccesfull) {
+		t.Fatalf("Speed test succeded when it should have failed with token \"qwerty\".");
+	}
+	if(result.HadLocalError == false || result.HadRemoteOrNetworkError == true || 
+		result.FriendlyErrorMessage != "Specified Provider Name is not recognized.") {
+		t.Errorf("Speed test failed but for the wrong reasons: %s", result.FriendlyErrorMessage);
 	}
 }
